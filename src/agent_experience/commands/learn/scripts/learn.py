@@ -7,6 +7,7 @@ from agent_experience.core.render import render_string
 from agent_experience.core.skill_loader import Skill, load_skill
 
 _TOPIC_RE = re.compile(r"^[a-z][a-z0-9-]*$")
+_SKILL_FILENAME = "SKILL.md"
 
 
 def _learn_assets() -> Traversable:
@@ -28,7 +29,7 @@ def _list_topics() -> list[dict]:
     for topic_dir in sorted(topics_root.iterdir(), key=lambda p: p.name):
         if topic_dir.is_file():
             continue
-        skill_md = topic_dir.joinpath("SKILL.md")
+        skill_md = topic_dir.joinpath(_SKILL_FILENAME)
         if not skill_md.is_file():
             continue
         skill = _load_skill_from_traversable(skill_md)
@@ -51,13 +52,15 @@ def run_topic(topic: str, backend: Backend) -> tuple[str, int, str]:
         return (menu_out, 2, f"agex: error: unknown topic '{topic}'")
 
     topic_dir = _learn_assets().joinpath("topics", topic)
-    skill_md = topic_dir.joinpath("SKILL.md")
+    skill_md = topic_dir.joinpath(_SKILL_FILENAME)
     if not skill_md.is_file():
         menu_out, _, _ = run_menu(backend)
         return (menu_out, 2, f"agex: error: unknown topic '{topic}'")
 
     skill = _load_skill_from_traversable(skill_md)
-    template_path = topic_dir.joinpath("assets", "skill-template", backend.value, "SKILL.md")
+    template_path = topic_dir.joinpath(
+        "assets", "skill-template", backend.value, _SKILL_FILENAME
+    )
     template_body = (
         template_path.read_text(encoding="utf-8") if template_path.is_file() else ""
     )
