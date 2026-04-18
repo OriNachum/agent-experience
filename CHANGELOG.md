@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `agex learn [topic] --agent <backend>` — menu of available lessons
+  without a topic, or teaches one with a topic. Lessons emit a
+  Jinja-rendered markdown body plus an inline backend-native skill
+  template the agent can write into the project itself. Rejects
+  path-traversal topic arguments via the same `^[a-z][a-z0-9-]*$`
+  whitelist as `agex explain`.
+- Four v0.1 lessons under `commands/learn/assets/topics/`:
+  `introspect`, `visualize`, `gamify` (bundles the `levelup` template),
+  and `levelup`. Each ships with a `claude-code` skill template;
+  Phase 8 will route non-claude-code backends through `capabilities.py`.
+- `commands/learn/` skill-folder (`SKILL.md` doubles as
+  `agex explain learn`; `assets/menu.md.j2` for the topic menu).
+- `tests/commands/test_learn.py` with 7 tests including a
+  path-traversal guard mirroring the `explain` precedent. 46 tests
+  passing total; overall coverage 97%.
+
+## [0.2.0] — 2026-04-18
+
+### Added
 - `agex overview --agent claude-code` — deterministic markdown snapshot of
   a project's Claude Code setup (CLAUDE.md, skills, hooks, MCP, settings).
   Read-only except for first-run `.agex/` init. Unknown backends currently
@@ -20,11 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   per-backend YAML). The `SKILL.md` doubles as `agex explain overview`.
 - CLI `_agent_option()` helper and `@app.command("overview")` wiring.
 - Test fixtures under `tests/fixtures/claude-code/` (`empty/`, `typical/`,
-  `malformed/`). Probe test coverage now 100%; overall project 98%.
+  `malformed/`). Probe test coverage 100%; overall project 98%.
 
 ### Changed
-- Version bumped to 0.2.0 (minor — new `overview` surface, backward
-  compatible).
 - Renamed PyPI distribution from `agent-experience` to `agex-cli` (CLI
   entry point stays `agex`); renamed GitHub repo from
   `OriNachum/agent-experience` to `OriNachum/agex`; updated issue and
