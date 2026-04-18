@@ -1,59 +1,52 @@
 # Overview — {{ backend }}
 
 **Project:** `{{ project_dir }}`
-
 {% if probe.warnings %}
-{%- for w in probe.warnings %}
+{% for w in probe.warnings -%}
 > ⚠️ {{ w }}
-{%- endfor %}
-
-{% endif %}
+{% endfor %}
+{%- endif %}
 ## Project memory
-
-{% if probe.claude_md %}
+{% if probe.claude_md -%}
 - `{{ probe.claude_md.name }}` present at `{{ probe.claude_md }}`
-{% else %}
+{%- else -%}
 - _no CLAUDE.md / AGENTS.md equivalent found_
-{% endif %}
+{%- endif %}
 
 ## Skills ({{ probe.skills|length }})
-
-{% if probe.skills %}
+{% if probe.skills -%}
 | name | description |
 |---|---|
-{%- for s in probe.skills %}
+{% for s in probe.skills -%}
 | `{{ s.name }}` | {{ s.description }} |
-{%- endfor %}
-{% else %}
+{% endfor %}
+{%- else -%}
 _none_
-{% endif %}
+{%- endif %}
 
 ## Hooks ({{ probe.hooks|length }})
-
-{% if probe.hooks %}
-{%- for h in probe.hooks %}
+{% if probe.hooks -%}
+{% for h in probe.hooks -%}
 - `{{ h.event }}` — {{ h.entries|length }} entry(s)
-{%- endfor %}
-{% else %}
+{% endfor %}
+{%- else -%}
 _none_
-{% endif %}
+{%- endif %}
 
 ## MCP servers ({{ probe.mcp_servers|length }})
-
-{% if probe.mcp_servers %}
-{%- for m in probe.mcp_servers %}
+{% if probe.mcp_servers -%}
+{% for m in probe.mcp_servers -%}
 - `{{ m.name }}`
-{%- endfor %}
-{% else %}
+{% endfor %}
+{%- else -%}
 _none_
-{% endif %}
+{%- endif %}
 
 ## Settings
-
-{% if probe.settings %}
+{% if probe.settings -%}
 ```json
 {{ probe.settings | tojson(indent=2) }}
 ```
-{% else %}
+{%- else -%}
 _no settings file found_
-{% endif %}
+{%- endif %}
