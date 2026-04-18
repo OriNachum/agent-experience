@@ -1,4 +1,7 @@
+import pytest
 from concurrent.futures import ThreadPoolExecutor
+
+import portalocker
 
 from agent_experience.core.hook_io import append_event, load_events, render_table
 from agent_experience.core.paths import ensure_init
@@ -76,3 +79,56 @@ def test_concurrent_appends_no_corruption(tmp_path, monkeypatch):
     events = load_events("stop")
     assert len(events) == 50
     assert sorted(e["i"] for e in events) == list(range(50))
+
+
+def test_append_event_retries_on_already_locked(tmp_path, monkeypatch):
+    """Regression test for issue #12: append_event retries when portalocker
+    reports AlreadyLocked (Windows msvcrt EDEADLK), rather than propagating
+    on the first transient failure."""
+    from portalocker.exceptions import AlreadyLocked
+
+    monkeypatch.chdir(tmp_path)
+    ensure_init()
+
+    call_count = {"n": 0}
+    original_lock = portalocker.lock
+
+    def flaky_lock(fh, flags):
+        call_count["n"] += 1
+        if call_count["n"] <= 2:  # fail the first two attempts
+            raise AlreadyLocked("simulated Windows msvcrt EDEADLK")
+        return original_lock(fh, flags)
+
+    # Import the module so we patch the SAME reference append_event uses
+    from agent_experience.core import hook_io
+    monkeypatch.setattr(hook_io.portalocker, "lock", flaky_lock)
+    # Patch out sleep so the test finishes instantly
+    monkeypatch.setattr(hook_io.time, "sleep", lambda _: None)
+
+    append_event("stop", {"i": 42})
+
+    events = load_events("stop")
+    assert len(events) == 1
+    assert events[0]["i"] == 42
+    assert call_count["n"] == 3  # two failed attempts + one success
+
+
+def test_append_event_gives_up_after_max_attempts(tmp_path, monkeypatch):
+    """If every retry fails, the final AlreadyLocked is propagated (no silent
+    data loss)."""
+    from portalocker.exceptions import AlreadyLocked
+
+    monkeypatch.chdir(tmp_path)
+    ensure_init()
+
+    from agent_experience.core import hook_io
+
+    def always_fail(fh, flags):
+        raise AlreadyLocked("simulated persistent lock contention")
+
+    monkeypatch.setattr(hook_io.portalocker, "lock", always_fail)
+    # Patch out sleep so the test finishes instantly
+    monkeypatch.setattr(hook_io.time, "sleep", lambda _: None)
+
+    with pytest.raises(AlreadyLocked):
+        append_event("stop", {"i": 42})
