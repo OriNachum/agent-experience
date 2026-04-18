@@ -20,11 +20,12 @@ agex overview --agent codex
 
 ## What you get
 
-Markdown sections: Project root, `CLAUDE.md`/`AGENTS.md` presence, Skills, Hooks, Agents, MCP servers, Settings.
+Markdown sections: Project root, `CLAUDE.md`/`AGENTS.md` presence, Skills,
+Hooks, MCP servers, Settings.
 
 ## Notes
 
-- Unknown fields are skipped with a `> ⚠️` inline warning.
+- Malformed files are skipped with a `> ⚠️` inline warning.
 - Read-only except first-run `.agex/` init.
 - Build diagnostic logic (gaps, recommendations) into an agent-authored skill:
   `agex learn introspect --agent <backend>`.

@@ -14,7 +14,10 @@ _PROBES = {
 
 
 def _assets_root() -> Traversable:
-    return files("agent_experience.commands.overview.assets")
+    # Anchor on the `commands` package (which has __init__.py) and navigate in,
+    # matching explain.py's pattern. Avoids relying on namespace-package
+    # semantics for `assets/`, which is a data directory, not a package.
+    return files("agent_experience.commands").joinpath("overview", "assets")
 
 
 def run(backend: Backend) -> tuple[str, int, str]:
