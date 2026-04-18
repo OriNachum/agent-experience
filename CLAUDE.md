@@ -47,7 +47,7 @@ cli.py ──► commands/<name>/scripts/<name>.py ──► core/render.py
 - **File locking: use `portalocker.lock` / `portalocker.unlock`.** Reaching for `fcntl.flock` / `msvcrt.locking` directly is a known foot-gun on Windows (see commit `923f639`).
 - **Always pass `encoding="utf-8"` to `read_text` / `write_text`.** Default locale on Windows corrupts non-ASCII output.
 - **Validate user-controlled CLI args before joining into paths.** `agex explain <topic>` rejects anything that doesn't match `^[a-z][a-z0-9-]*$` to block path traversal (commit `5ac796e`, test `test_explain_rejects_path_traversal`).
-- **Single source of truth for the version:** `agent_experience.__version__`. `Config.agex_version` derives from it via `field(default_factory=...)`.
+- **Single source of truth for the version:** `pyproject.toml`. `agent_experience.__version__` derives from installed distribution metadata via `importlib.metadata.version("agex-cli")`, and `Config.agex_version` derives from `__version__` via `field(default_factory=...)`. Bumping the version means editing `pyproject.toml` only — no `__init__.py` edit needed.
 
 ## Common commands
 
