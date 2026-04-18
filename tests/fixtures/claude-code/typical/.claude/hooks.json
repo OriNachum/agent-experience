@@ -1,0 +1,5 @@
+{
+  "post-tool-use": [
+    {"matcher": "Bash", "command": "echo hello"}
+  ]
+}
