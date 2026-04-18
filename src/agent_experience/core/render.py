@@ -14,8 +14,11 @@ _ENV = Environment(
 )
 
 
-# NOSONAR: Templates are package-shipped; output is markdown, not HTML. See
-# sonar-project.properties for the narrow S5496 suppression on this file.
+# S5496 is suppressed for this file in sonar-project.properties.
+# Rationale: render_string() renders Jinja templates that are always
+# package-shipped (never user-controlled), and the output is markdown
+# consumed by LLMs / the terminal — never rendered in an HTML context.
+# Auto-escape is disabled deliberately (select_autoescape([]) above).
 def render_string(template: str, context: dict[str, Any]) -> str:
     return _ENV.from_string(template).render(**context)
 
