@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-agex = "agent_experience.cli:app"
+agex = "agent_experience.cli:_main_entrypoint"
 
 [project.urls]
 Homepage = "https://agex.culture.dev"
