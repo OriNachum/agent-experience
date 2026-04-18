@@ -37,7 +37,7 @@ def _load_hooks_file(path: Path) -> dict:
         raise ValueError(
             f"{path} is not valid JSON ({e}); refusing to overwrite. "
             "Fix or remove the file before re-running."
-        )
+        ) from e
 
 
 def _write_hooks_file(path: Path, data: dict) -> None:
