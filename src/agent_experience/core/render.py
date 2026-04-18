@@ -14,6 +14,8 @@ _ENV = Environment(
 )
 
 
+# NOSONAR: Templates are package-shipped; output is markdown, not HTML. See
+# sonar-project.properties for the narrow S5496 suppression on this file.
 def render_string(template: str, context: dict[str, Any]) -> str:
     return _ENV.from_string(template).render(**context)
 

@@ -24,7 +24,11 @@ def main(
         None, "--version", callback=_version_callback, is_eager=True
     ),
 ) -> None:
-    pass
+    """Root callback — exists only to hold the --version option.
+
+    Typer invokes the eager _version_callback before any subcommand
+    dispatch; there is nothing else to do at the app level.
+    """
 
 
 @app.command("explain")
