@@ -17,5 +17,5 @@ agex learn introspect --agent claude-code
 
 ## Notes
 
-- Lessons gated on a backend feature (e.g., `gamify` needs hooks) are still listed, marked with an unsupported note.
+- Lessons gated on a backend feature (e.g., `gamify` needs hooks) may still appear in the list, but they are not currently annotated as unsupported in the menu — Phase 8 adds that capability-based routing.
 - v0.1 emits inline code blocks only. A future `--write` flag is tracked as an open issue.

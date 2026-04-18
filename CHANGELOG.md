@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-04-18
+
 ### Added
 - `agex learn [topic] --agent <backend>` — menu of available lessons
   without a topic, or teaches one with a topic. Lessons emit a
@@ -18,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `introspect`, `visualize`, `gamify` (bundles the `levelup` template),
   and `levelup`. Each ships with a `claude-code` skill template;
   Phase 8 will route non-claude-code backends through `capabilities.py`.
+  The `gamify` and `levelup` lessons reference `agex gamify` and
+  `agex hook read` which land in Phase 6/7 — both lessons carry an
+  explicit "Preview" note until those commands ship.
 - `commands/learn/` skill-folder (`SKILL.md` doubles as
   `agex explain learn`; `assets/menu.md.j2` for the topic menu).
 - `tests/commands/test_learn.py` with 7 tests including a

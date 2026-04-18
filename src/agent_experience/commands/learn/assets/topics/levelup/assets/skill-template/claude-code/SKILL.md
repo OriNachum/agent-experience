@@ -6,6 +6,8 @@ type: command
 
 # Level up
 
+> **Note:** Requires `agex hook read`, which ships in a future phase (Phase 6). Until it lands, this skill has no data source — treat it as a scaffold placeholder.
+
 Invoke when the user asks for what's next, or opportunistically after a long session.
 
 ## Process

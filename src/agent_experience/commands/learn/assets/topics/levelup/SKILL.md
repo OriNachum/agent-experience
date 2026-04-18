@@ -6,6 +6,8 @@ type: lesson
 
 # Lesson — build the `levelup` skill for {{ backend }}
 
+> **Preview:** This lesson depends on `agex gamify` (Phase 7) and `agex hook read` (Phase 6); neither is available in agex 0.3.0. Treat the steps below as a design preview — the emitted skill template won't have real data to read until those commands ship.
+
 Prerequisite: you've run `agex gamify --agent {{ backend }}` so there's data to read.
 
 ## Step 1 — understand the data source

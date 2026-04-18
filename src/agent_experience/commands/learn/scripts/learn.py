@@ -33,7 +33,12 @@ def _list_topics() -> list[dict]:
         if not skill_md.is_file():
             continue
         skill = _load_skill_from_traversable(skill_md)
-        topics.append({"name": skill.name, "description": skill.description, "unsupported": None})
+        # Use the directory name as the canonical slug — `run_topic` looks up
+        # by directory, so the menu's `agex learn <name>` invocation must
+        # match. Frontmatter `skill.name` is still available for drift checks.
+        topics.append(
+            {"name": topic_dir.name, "description": skill.description, "unsupported": None}
+        )
     return topics
 
 
