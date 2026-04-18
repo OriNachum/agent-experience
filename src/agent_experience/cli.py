@@ -3,6 +3,7 @@ from typing import Optional
 import typer
 
 from agent_experience import __version__
+from agent_experience.commands.explain.scripts import explain as explain_script
 
 app = typer.Typer(
     name="agex",
@@ -24,3 +25,14 @@ def main(
     ),
 ) -> None:
     pass
+
+
+@app.command("explain")
+def explain(topic: str = typer.Argument(..., help="Topic to explain.")) -> None:
+    stdout, exit_code, stderr = explain_script.run(topic)
+    if stdout:
+        typer.echo(stdout, nl=False)
+    if stderr:
+        typer.echo(stderr, err=True)
+    if exit_code != 0:
+        raise typer.Exit(code=exit_code)
