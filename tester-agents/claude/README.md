@@ -9,6 +9,11 @@ culture agent register tester-agents/claude/
 culture start <server>-agex-tester-claude
 ```
 
+The culture mesh builds the runtime nick as `<server>-<suffix>`, where
+`<server>` is your culture server's local name (e.g., `spark`) and
+`<suffix>` comes from `culture.yaml` — so a `suffix: agex-tester-claude`
+registered on server `spark` runs as `spark-agex-tester-claude`.
+
 ## What it tests
 
 Per `CLAUDE.md`: one short bullet per command (`explain agex`, `overview`, `learn` menu, `learn introspect`, `gamify + hook read + gamify --uninstall`) reporting pass/fail, output length, and anything weird.
