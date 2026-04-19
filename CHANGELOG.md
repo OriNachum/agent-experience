@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-04-19
+
+### Added
+- **`.github/workflows/publish.yml`** — automated publish pipeline.
+  Every push to `main` builds an sdist + wheel and publishes to
+  **TestPyPI** (`skip-existing: true` makes it idempotent across
+  pushes that don't bump the version). Every push of a `v*` tag
+  publishes to **PyPI**. Both jobs use **Trusted Publishing** (OIDC),
+  so no API tokens are required — the matching PyPI/TestPyPI
+  publishers and GitHub repo Environments (`pypi`, `testpypi`) must
+  be configured once out-of-band.
+- All third-party actions SHA-pinned with trailing `# vN` comments
+  per project convention #10: `actions/checkout@v4`,
+  `astral-sh/setup-uv@v3`, `actions/setup-python@v5`,
+  `actions/upload-artifact@v4`, `actions/download-artifact@v4`,
+  `pypa/gh-action-pypi-publish@release/v1`.
+
+### Release notes
+This is the closing phase of the v0.1 implementation plan. Phases
+1–11 + 13 shipped the CLI, docs site (with per-PR previews), the
+Claude dogfooding workspace, and the docs-drift guards. Phase 12
+(this release) lights up the publishing pipeline — `agex-cli` is
+now installable from TestPyPI via `uv tool install --index-url
+https://test.pypi.org/simple/ agex-cli` immediately after the first
+post-merge build, and from PyPI after the maintainer pushes a
+`v0.10.0` tag.
+
 ## [0.9.0] — 2026-04-19
 
 ### Added
