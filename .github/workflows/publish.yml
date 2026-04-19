@@ -1,10 +1,11 @@
 name: publish
 
 # Publishes sdist + wheel to:
-#   - TestPyPI  on every push to main  (version bumps become real releases)
-#   - PyPI      on every push of a v*  tag
+#   - TestPyPI  on every PR               (dev version -- installable preview)
+#   - TestPyPI  on every push to main     (stable version from pyproject.toml)
+#   - PyPI      on every push of a v* tag
 #
-# Trusted Publishing (OIDC) is used in both jobs -- no API tokens needed. For
+# Trusted Publishing (OIDC) is used in every publish job -- no API tokens. For
 # this to work, the following one-time configuration must exist:
 #
 #   - PyPI project `agex-cli` → Publishing → Add a GitHub pending publisher
@@ -16,15 +17,27 @@ name: publish
 #   - GitHub repo → Settings → Environments → create `pypi` and `testpypi`
 #     (any required reviewers / wait timers live there)
 #
-# TestPyPI rejects re-uploads of an existing version's artifacts when bytes
-# differ. `skip-existing: true` makes the TestPyPI job idempotent across main
-# pushes that do NOT bump `pyproject.toml`'s version -- those uploads quietly
-# no-op. Version bumps always publish a fresh TestPyPI release.
+# The PR job rewrites `version = "X.Y.Z"` to `"X.Y.Z.devN"` (N = the workflow
+# run number) before building, so each PR produces its own installable
+# TestPyPI release and reviewers can:
+#
+#     uv tool install --index-url https://test.pypi.org/simple/ \
+#       --extra-index-url https://pypi.org/simple/ \
+#       agex-cli==X.Y.Z.devN
+#
+# PEP 440 orders `X.Y.Z.devN < X.Y.Z`, so dev releases never overshadow the
+# real thing on TestPyPI. The PR job comments the exact install command back
+# on the PR (sticky: edits the comment in place on reruns).
 
 on:
   push:
     branches: [main]
     tags: ["v*"]
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - "src/**"
+      - ".github/workflows/publish.yml"
 
 # Workflow-level default: least-privilege read-only. Publish jobs ADD
 # `id-token: write` for OIDC on top; `contents: read` propagates so
@@ -36,7 +49,15 @@ permissions:
   contents: read
 
 jobs:
+  # --------------------------------------------------------------------------
+  # Shared build job for the main-push + tag paths. Produces a single `dist`
+  # artifact consumed by both publish-testpypi (on main) and publish-pypi
+  # (on v* tags). Skipped on pull_request -- the PR path has its own build
+  # inside `publish-pr-testpypi` because it needs to rewrite the version
+  # before building.
+  # --------------------------------------------------------------------------
   build:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
@@ -56,6 +77,111 @@ jobs:
         with:
           name: dist
           path: dist/
+
+  # --------------------------------------------------------------------------
+  # Per-PR dev-version publish to TestPyPI. Rewrites pyproject.toml to a
+  # `.devN` version before building so each PR gets its own unique TestPyPI
+  # release, then posts (or updates) a sticky PR comment with the install
+  # command for reviewers.
+  # --------------------------------------------------------------------------
+  publish-pr-testpypi:
+    # Fork-PR guard: GitHub masks secrets + denies OIDC to workflow runs
+    # from forks, so the deploy would fail anyway -- and more importantly,
+    # letting an untrusted fork run a privileged publish step is a real
+    # supply-chain hazard (exfiltrating TestPyPI credentials, pushing a
+    # malicious preview under the agex-cli name, etc.). Skip cleanly for
+    # forks; internal PRs take the fast path.
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write        # OIDC -- Trusted Publishing
+      contents: read         # actions/checkout
+      pull-requests: write   # sticky comment with the install command
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+      - uses: astral-sh/setup-uv@caf0cab7a618c569241d31dcd442f54681755d39  # v3
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: "3.11"
+      - run: uv venv
+      - run: uv pip install build
+
+      # Rewrite `[project].version` from `X.Y.Z` to `X.Y.Z.devN.M` where:
+      #   N = github.run_number (monotonic across the workflow's lifetime)
+      #   M = github.run_attempt (increments on re-runs of the same run_id)
+      # Without M, a re-run would try to publish the exact same version,
+      # which TestPyPI rejects. Parsing via tomllib + re-emitting only the
+      # `[project]` table's `version` key is more robust than `sed` -- if a
+      # future `[tool.*]` section ever introduces its own `version` key the
+      # regex approach would silently rewrite the wrong one.
+      - name: Set dev version
+        id: devver
+        run: |
+          set -e
+          DEV_VERSION=$(uv run python -c "
+          import re, tomllib
+          data = open('pyproject.toml').read()
+          base = tomllib.loads(data)['project']['version']
+          dev = f'{base}.dev${{ github.run_number }}${{ github.run_attempt }}'
+          # Fail-closed: bound the final version to PEP 440's safe shape
+          # before substituting into pyproject.toml (defense in depth against
+          # a hostile value sneaking into the [project].version field).
+          assert re.fullmatch(r'[0-9]+(\.[0-9]+)*(\.dev[0-9]+)?', dev), dev
+          out = re.sub(r'(?m)^version = .+', f'version = \"{dev}\"', data, count=1)
+          open('pyproject.toml', 'w').write(out)
+          print(dev)
+          ")
+          echo "dev_version=${DEV_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Publishing agex-cli ${DEV_VERSION} to TestPyPI"
+
+      - run: uv run python -m build
+
+      - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          # Belt-and-braces -- the dev-version scheme above already produces
+          # a unique version per run_id+run_attempt, so collisions shouldn't
+          # happen. If they ever do (e.g. a retry after a partial upload),
+          # skip-existing makes the workflow idempotent instead of failing.
+          skip-existing: true
+
+      # Sticky PR comment with the install command. Uses an
+      # `<!-- agex-pypi-preview -->` marker to edit the existing comment on
+      # reruns (same pattern as .github/workflows/docs.yml). `--paginate
+      # --slurp` ensures the marker is found even on PRs with >30 comments
+      # (default gh api page size); otherwise the workflow would post a
+      # duplicate comment on late-stage PRs.
+      - name: Post (or update) install-command comment
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          DEV_VERSION: ${{ steps.devver.outputs.dev_version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          MARKER='<!-- agex-pypi-preview -->'
+          INSTALL="pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ agex-cli==${DEV_VERSION}"
+          BODY="$MARKER"$'\n'"📦 **TestPyPI preview:** \`agex-cli==${DEV_VERSION}\`"$'\n\n'"Install this PR's wheel to try it locally:"$'\n\n'"\`\`\`bash"$'\n'"$INSTALL"$'\n'"\`\`\`"
+          # `gh api --paginate` streams one JSON array per page; `jq -s`
+          # ("slurp") collects them into `[[page1], [page2], ...]`, `add`
+          # flattens to a single array of all comments, then the filter
+          # picks our marker. `gh api --slurp --jq` itself is mutually
+          # exclusive (see https://github.com/cli/cli/issues/8615), so
+          # the slurp has to happen inside jq.
+          EXISTING=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" \
+            | jq -rs "add | [.[] | select(.body | contains(\"$MARKER\")) | .id] | first // empty")
+          if [ -n "$EXISTING" ]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$EXISTING" \
+              -f body="$BODY" > /dev/null
+            echo "Updated existing preview comment #$EXISTING"
+          else
+            gh pr comment "$PR_NUMBER" --body "$BODY"
+            echo "Created new preview comment"
+          fi
 
   publish-testpypi:
     needs: build
