@@ -26,6 +26,15 @@ on:
     branches: [main]
     tags: ["v*"]
 
+# Workflow-level default: least-privilege read-only. Publish jobs ADD
+# `id-token: write` for OIDC on top; `contents: read` propagates so
+# `actions/checkout` and `actions/download-artifact` both have the scopes
+# they need. Setting `permissions:` at job level REPLACES the default
+# entirely -- the workflow-level block ensures the replacement starts
+# from a usable baseline rather than from nothing.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -62,6 +71,7 @@ jobs:
     environment: testpypi
     permissions:
       id-token: write   # OIDC; no API token needed
+      contents: read    # actions/download-artifact needs this
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
@@ -80,6 +90,7 @@ jobs:
     environment: pypi
     permissions:
       id-token: write   # OIDC; no API token needed
+      contents: read    # actions/download-artifact needs this
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
