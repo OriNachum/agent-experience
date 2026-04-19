@@ -1,3 +1,4 @@
+import sys
 from typing import Any, Optional
 
 import typer
@@ -143,3 +144,27 @@ def overview(agent: str = _agent_option()) -> None:
         typer.echo(stderr, err=True)
     if exit_code != 0:
         raise typer.Exit(code=exit_code)
+
+
+# Keep in sync with the @app.command / app.add_typer registrations above.
+# If a new top-level command is added, extend this set so _main_entrypoint
+# stops routing it to the unknown-command fallback page.
+_KNOWN_COMMANDS = {"explain", "overview", "learn", "gamify", "hook"}
+
+
+def _main_entrypoint() -> None:
+    """CLI entry point that routes unknown subcommands to ``agex explain agex``.
+
+    When the first positional argument is not a known command (and is not a
+    flag), this function prints the ``agex explain agex`` page to stdout and
+    the canonical error message to stderr, then exits with code 2.  All other
+    invocations — known commands, ``--version``, ``--help``, zero-arg help —
+    fall through to the normal Typer ``app()`` dispatch unchanged.
+    """
+    argv = sys.argv[1:]
+    if argv and not argv[0].startswith("-") and argv[0] not in _KNOWN_COMMANDS:
+        typer.echo(f"agex: error: unknown command '{argv[0]}'", err=True)
+        stdout, _, _ = explain_script.run("agex")
+        typer.echo(stdout, nl=False)
+        sys.exit(2)
+    app()

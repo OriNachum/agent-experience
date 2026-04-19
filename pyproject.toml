@@ -1,6 +1,6 @@
 [project]
 name = "agex-cli"
-version = "0.6.0"
+version = "0.7.0"
 description = "Agent-operated developer-experience CLI — deterministic per-backend markdown briefings for autonomous agents."
 authors = [{name = "Ori Nachum"}]
 license = {text = "MIT"}
@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-agex = "agent_experience.cli:app"
+agex = "agent_experience.cli:_main_entrypoint"
 
 [project.urls]
 Homepage = "https://agex.culture.dev"

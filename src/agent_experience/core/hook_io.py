@@ -1,18 +1,49 @@
 import json
 import os
+import random
 import re
+import time
 import warnings
 from pathlib import Path
 from typing import Any
 
 import portalocker
+from portalocker.exceptions import AlreadyLocked
 
 from agent_experience.core.paths import data_dir
+
+# On Windows, portalocker uses msvcrt.locking() which can raise EDEADLK
+# (mapped to AlreadyLocked) when two writers race for the same append lock.
+# A handful of short retries is sufficient because the other writer releases
+# within microseconds. See https://github.com/OriNachum/agex/issues/12.
+_LOCK_MAX_ATTEMPTS = 5       # total attempts before giving up
+_LOCK_BASE_SLEEP_SEC = 0.01  # 10ms base backoff (writes complete in microseconds)
 
 # Stream names are joined into `.agex/data/<stream>.json`, so they must be a
 # safe slug to prevent path traversal (e.g., `../../evil`). Same whitelist as
 # `explain <topic>` / `learn <topic>`.
 _STREAM_RE = re.compile(r"^[a-z][a-z0-9-]*$")
+
+
+def _acquire_lock_with_retry(fh) -> None:
+    last_exc: AlreadyLocked | None = None
+    for attempt in range(1, _LOCK_MAX_ATTEMPTS + 1):
+        try:
+            portalocker.lock(fh, portalocker.LOCK_EX)
+            return
+        except AlreadyLocked as exc:
+            last_exc = exc
+            if attempt == _LOCK_MAX_ATTEMPTS:
+                break
+            time.sleep(_LOCK_BASE_SLEEP_SEC * attempt + random.uniform(0, _LOCK_BASE_SLEEP_SEC))
+    # Unreachable by construction — the loop always records an exception before
+    # breaking — but an explicit guard keeps the re-raise safe under `python -O`
+    # (which strips `assert`) and satisfies type narrowing. The re-raise is
+    # outside any `except` block, so no implicit exception chain needs
+    # suppressing and a bare `raise last_exc` (not `from`) is the idiomatic form.
+    if last_exc is None:  # pragma: no cover
+        raise RuntimeError("_acquire_lock_with_retry: no exception recorded")
+    raise last_exc
 
 
 def _validate_stream(stream: str) -> None:
@@ -32,7 +63,7 @@ def append_event(stream: str, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps(payload, separators=(",", ":")) + "\n"
     with path.open("a", encoding="utf-8") as fh:
-        portalocker.lock(fh, portalocker.LOCK_EX)
+        _acquire_lock_with_retry(fh)
         try:
             fh.write(line)
             fh.flush()
