@@ -52,8 +52,12 @@ def _load_hooks_file(path: Path) -> dict:
 
 
 def _write_hooks_file(path: Path, data: dict) -> None:
+    # Sonar pythonsecurity:S2083: `path` derives from
+    # Path.cwd()/".claude/hooks.json"; the backend is enum-validated by
+    # parse_backend() before reaching here. Full rationale lives in
+    # sonar-project.properties. The suppression tag below is the
+    # load-bearing one under SonarCloud Automatic Analysis.
     path.parent.mkdir(parents=True, exist_ok=True)
-    # NOSONAR(pythonsecurity:S2083): path is Path.cwd()/.claude/hooks.json; backend is enum-validated by parse_backend() before reaching here. See sonar-project.properties for the full rationale.
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")  # NOSONAR
 
 

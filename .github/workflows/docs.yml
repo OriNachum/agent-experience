@@ -75,8 +75,18 @@ jobs:
           # by the shell, so the sed sanitiser can no longer be bypassed by
           # crafted branch names containing shell metacharacters.
           HEAD_REF: ${{ github.head_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           safe=$(printf '%s' "$HEAD_REF" | sed 's/[^a-zA-Z0-9-]/-/g; s/--*/-/g; s/^-//; s/-$//')
+          # Defence-in-depth: a head_ref of "---" (or other input that is
+          # fully stripped by the sanitiser) would yield an empty `safe`,
+          # and the deploy step's `... && steps.branch.outputs.name ||
+          # 'main'` fallback would then resolve to `'main'` -- publishing
+          # PR content to the production alias. Substitute a deterministic
+          # per-PR name instead.
+          if [ -z "$safe" ]; then
+            safe="pr-${PR_NUMBER}"
+          fi
           echo "name=$safe" >> "$GITHUB_OUTPUT"
 
       # Deploy to Cloudflare Pages.

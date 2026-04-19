@@ -14,16 +14,17 @@ _ENV = Environment(
 )
 
 
-# S5496 is suppressed inline (NOSONAR) below and also documented in
-# sonar-project.properties. Rationale: render_string() renders Jinja
-# templates that are always package-shipped (never user-controlled), and
-# the output is markdown consumed by LLMs / the terminal — never rendered
-# in an HTML context. Auto-escape is disabled deliberately (see
-# select_autoescape([]) above). SonarCloud Automatic Analysis does not
-# honor the project-properties suppression, so the NOSONAR tag is the
-# load-bearing one; keeping both keeps a manual CLI scanner happy too.
+# Sonar pythonsecurity:S5496 is suppressed inline on the render call
+# below and also documented in sonar-project.properties. Rationale:
+# render_string() renders Jinja templates that are always package-shipped
+# (never user-controlled), and the output is markdown consumed by LLMs /
+# the terminal — never rendered in an HTML context. Auto-escape is
+# disabled deliberately (see select_autoescape([]) above). SonarCloud
+# Automatic Analysis ignores the project-properties suppression, so the
+# inline tag is the load-bearing one; both stay so a manual CLI scan also
+# sees the suppression.
 def render_string(template: str, context: dict[str, Any]) -> str:
-    return _ENV.from_string(template).render(**context)  # NOSONAR(pythonsecurity:S5496)
+    return _ENV.from_string(template).render(**context)  # NOSONAR
 
 
 def render_file(path: Path, context: dict[str, Any]) -> str:
