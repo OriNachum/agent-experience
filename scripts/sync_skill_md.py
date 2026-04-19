@@ -50,9 +50,24 @@ def _top_level_command_skill_md() -> list[Path]:
     )
 
 
+def _clear_stale_pages(expected_names: set[str]) -> None:
+    """Unlink any `docs/commands/*.md` that isn't in the freshly-computed
+    expected set (keeps `index.md`, always regenerated below). Prevents
+    stale pages from lingering when a command is renamed or removed."""
+    if not DOCS_COMMANDS.exists():
+        return
+    for existing in sorted(DOCS_COMMANDS.glob("*.md")):
+        if existing.name in expected_names:
+            continue
+        existing.unlink()
+
+
 def main() -> int:
     DOCS_COMMANDS.mkdir(parents=True, exist_ok=True)
-    for order, skill_md in enumerate(_top_level_command_skill_md(), start=1):
+    skill_paths = _top_level_command_skill_md()
+    expected_names = {f"{p.parent.name}.md" for p in skill_paths} | {"index.md"}
+    _clear_stale_pages(expected_names)
+    for order, skill_md in enumerate(skill_paths, start=1):
         skill = load_skill(skill_md)
         page = _JEKYLL_FRONTMATTER.format(title=skill.name, order=order * 10) + skill.body
         out_path = DOCS_COMMANDS / f"{skill_md.parent.name}.md"

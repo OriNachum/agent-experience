@@ -27,7 +27,11 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
           python-version: "3.11"
-      - run: uv sync --all-extras
+      # Match the install pattern used by .github/workflows/build.yml -- the
+      # repo does not commit a uv.lock, so `uv venv` + `uv pip install -e .`
+      # is the reproducible shape across every workflow.
+      - run: uv venv
+      - run: uv pip install -e "."
       - run: uv run python scripts/sync_skill_md.py
 
       # Jekyll build.

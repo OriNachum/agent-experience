@@ -19,4 +19,4 @@ agex overview --agent claude-code
 - **Repo:** <https://github.com/OriNachum/agex>
 - **PyPI:** <https://pypi.org/project/agex-cli/>
 
-See [Getting started](getting-started.html) for a walkthrough.
+See [Getting started](getting-started.md) for a walkthrough.
