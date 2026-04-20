@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.3] — 2026-04-21
+
+### Fixed
+
+- **Unknown paths under `agex` served the homepage with a 200 status
+  instead of returning a real 404.** Cloudflare Pages' default
+  behavior, when a project has no `404.html`, is to fall back to
+  `index.html`. That let `/agex/docs`, `/agex/about`, and any other
+  bogus path render the agex homepage with the wrong URL — bad for
+  users (confusing), bad for SEO (duplicate content across many
+  URLs). Added `docs/404.md` (`permalink: /404.html`,
+  `sitemap: false`, `search_exclude: true`) — Jekyll emits
+  `_site/404.html`, CF Pages now serves it with an actual 404
+  response.
+
 ## [0.12.2] — 2026-04-20
 
 ### Fixed
