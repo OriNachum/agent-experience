@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.2] — 2026-04-21
+
+### Changed
+
+- **Clarify that `agex` stands for *agent experience*, not *agent
+  execution*.** Updated user-facing descriptions in `README.md`,
+  `docs/index.md` (hero label + meta description), PyPI
+  `description` in `pyproject.toml`, the `agex explain agex`
+  self-describing page, and Typer's root `--help` text in
+  `cli.py`. Language consistently frames agex as the deterministic
+  markdown layer that *briefs* autonomous agents about their
+  runtime — it never executes agent logic itself.
+
 ## [0.13.1] — 2026-04-21
 
 ### Fixed

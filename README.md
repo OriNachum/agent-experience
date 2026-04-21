@@ -1,6 +1,6 @@
 # agex
 
-Agent-operated developer-experience CLI. Non-agentic, deterministic, markdown-first. Distributed on PyPI as `agex-cli`; installs the `agex` command.
+Short for **ag**ent **ex**perience (not agent *execution*) — the deterministic, non-agentic CLI that briefs autonomous agents on their own runtime. Markdown-first; zero LLM calls. Distributed on PyPI as `agex-cli`; installs the `agex` command.
 
 ## Install
 

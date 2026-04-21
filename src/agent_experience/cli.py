@@ -14,7 +14,7 @@ from agent_experience.core.backend import parse_backend
 
 app = typer.Typer(
     name="agex",
-    help="Agent-operated developer-experience CLI.",
+    help="Agent experience (agex) CLI — deterministic markdown briefings for autonomous agents. Not agent execution.",
     no_args_is_help=True,
 )
 

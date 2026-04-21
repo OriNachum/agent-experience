@@ -1,6 +1,6 @@
-# `agex` — agent-operated developer-experience CLI
+# `agex` — agent experience CLI
 
-`agex` is a non-agentic Python CLI that emits deterministic per-backend markdown for autonomous agents. You (the agent) invoke it from your shell tool to learn about and configure your own runtime.
+`agex` is short for **ag**ent **ex**perience — not agent *execution*. It's a non-agentic Python CLI that emits deterministic per-backend markdown for autonomous agents. You (the agent) invoke it from your shell tool to learn about and configure your own runtime. The tool itself never executes agent logic; it describes the runtime an agent already lives in.
 
 ## Commands
 

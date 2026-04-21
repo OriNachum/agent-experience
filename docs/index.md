@@ -2,13 +2,13 @@
 title: agex
 nav_order: 0
 permalink: /
-description: Agent-operated developer-experience CLI for autonomous coding agents.
+description: Agent experience (agex) CLI — deterministic markdown briefings that teach autonomous agents about their own runtime.
 ---
 
 <div class="hero">
-  <p class="hero-label">Developer experience for agents</p>
+  <p class="hero-label">Agent experience — not agent execution</p>
   <h1 class="hero-headline">The CLI your agents read&nbsp;first.</h1>
-  <p class="hero-sub">Deterministic, per-backend markdown briefings. Zero LLM calls. One command: <code>agex</code>.</p>
+  <p class="hero-sub"><code>agex</code> = <strong>ag</strong>ent <strong>ex</strong>perience. Deterministic, per-backend markdown briefings. Zero LLM calls.</p>
   <div>
     <a href="{{ '/getting-started/' | relative_url }}" class="btn-cta btn-cta--primary">Get started</a>
     <a href="{{ '/commands/' | relative_url }}" class="btn-cta btn-cta--secondary">Browse commands</a>
