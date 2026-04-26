@@ -31,6 +31,18 @@ Status = Literal["ok", "warn", "fail", "info"]
 _ROLE_RE = re.compile(r"^[a-z][a-z0-9-]*$")
 _MIN_PYTHON = (3, 10)
 
+# Check-row names — kept as constants so each appears once in source
+# (sonar python:S1192).
+_NAME_AGEX_VERSION = "agex version"
+_NAME_PYTHON = "Python"
+_NAME_PACKAGE_RESOURCES = "Package resources"
+_NAME_AGEX_DIR = "`.agex/` directory"
+_NAME_CONFIG_TOML = "`.agex/config.toml`"
+_NAME_GITIGNORE = "`.agex/.gitignore`"
+_NAME_DATA_DIR = "`.agex/data/`"
+_NAME_SKILL_MD = "Shipped SKILL.md frontmatter"
+_NAME_CAPABILITY_YAML = "Backend capability YAML"
+
 
 @dataclass
 class CheckResult:
@@ -59,12 +71,12 @@ def _doctor_assets() -> Traversable:
 def _check_version() -> CheckResult:
     if not __version__ or __version__ == "unknown":
         return CheckResult(
-            "agex version",
+            _NAME_AGEX_VERSION,
             "fail",
             "Could not resolve `agent_experience.__version__`. Reinstall with "
             "`uv pip install -e .[dev]` or `pipx install agex-cli`.",
         )
-    return CheckResult("agex version", "ok", __version__)
+    return CheckResult(_NAME_AGEX_VERSION, "ok", __version__)
 
 
 def _check_python() -> CheckResult:
@@ -72,11 +84,11 @@ def _check_python() -> CheckResult:
     detail = ".".join(str(p) for p in cur)
     if cur[:2] < _MIN_PYTHON:
         return CheckResult(
-            "Python",
+            _NAME_PYTHON,
             "fail",
             f"{detail} (need >= {_MIN_PYTHON[0]}.{_MIN_PYTHON[1]})",
         )
-    return CheckResult("Python", "ok", detail)
+    return CheckResult(_NAME_PYTHON, "ok", detail)
 
 
 def _check_resources() -> CheckResult:
@@ -86,13 +98,13 @@ def _check_resources() -> CheckResult:
         agex_md = _commands_root().joinpath("explain", "assets", "topics", "agex.md")
         if not agex_md.is_file():
             return CheckResult(
-                "Package resources",
+                _NAME_PACKAGE_RESOURCES,
                 "fail",
-                "Cannot locate `commands/explain/assets/topics/agex.md`. " "Reinstall the package.",
+                "Cannot locate `commands/explain/assets/topics/agex.md`. Reinstall the package.",
             )
     except Exception as exc:  # pragma: no cover - defensive only
-        return CheckResult("Package resources", "fail", f"resource lookup raised: {exc}")
-    return CheckResult("Package resources", "ok", "all shipped assets reachable")
+        return CheckResult(_NAME_PACKAGE_RESOURCES, "fail", f"resource lookup raised: {exc}")
+    return CheckResult(_NAME_PACKAGE_RESOURCES, "ok", "all shipped assets reachable")
 
 
 # --- Project state checks --------------------------------------------------
@@ -102,25 +114,25 @@ def _check_agex_dir() -> CheckResult:
     root = agex_dir()
     if not root.exists():
         return CheckResult(
-            "`.agex/` directory",
+            _NAME_AGEX_DIR,
             "info",
             f"not initialized at `{root}` — run any backend-aware command "
             "(e.g. `agex overview --agent claude-code`) to bootstrap.",
         )
     if not root.is_dir():
         return CheckResult(
-            "`.agex/` directory",
+            _NAME_AGEX_DIR,
             "fail",
             f"`{root}` exists but is not a directory.",
         )
-    return CheckResult("`.agex/` directory", "ok", str(root))
+    return CheckResult(_NAME_AGEX_DIR, "ok", str(root))
 
 
 def _check_config_toml() -> CheckResult:
     path = config_path()
     if not path.exists():
         return CheckResult(
-            "`.agex/config.toml`",
+            _NAME_CONFIG_TOML,
             "info",
             "not present (expected when `.agex/` is uninitialized).",
         )
@@ -133,62 +145,62 @@ def _check_config_toml() -> CheckResult:
         cfg = config_module.load()
     except Exception as exc:
         return CheckResult(
-            "`.agex/config.toml`",
+            _NAME_CONFIG_TOML,
             "fail",
             f"failed to parse: {exc}. Edit or delete the file.",
         )
 
     if cfg.agex_version and cfg.agex_version != __version__:
         return CheckResult(
-            "`.agex/config.toml`",
+            _NAME_CONFIG_TOML,
             "warn",
             (
                 f'`agex_version = "{cfg.agex_version}"` does not match installed '
                 f"`{__version__}`. Will reconcile on next write."
             ),
         )
-    return CheckResult("`.agex/config.toml`", "ok", f"version {cfg.agex_version}")
+    return CheckResult(_NAME_CONFIG_TOML, "ok", f"version {cfg.agex_version}")
 
 
 def _check_gitignore() -> CheckResult:
     root = agex_dir()
     gi = root / ".gitignore"
     if not root.exists():
-        return CheckResult("`.agex/.gitignore`", "info", "skipped (no `.agex/`).")
+        return CheckResult(_NAME_GITIGNORE, "info", "skipped (no `.agex/`).")
     if not gi.exists():
         return CheckResult(
-            "`.agex/.gitignore`",
+            _NAME_GITIGNORE,
             "warn",
             "missing — `data/` may end up tracked. Re-run any agex command to restore.",
         )
     actual = gi.read_text(encoding="utf-8")
     if actual != GITIGNORE_CONTENT:
         return CheckResult(
-            "`.agex/.gitignore`",
+            _NAME_GITIGNORE,
             "warn",
             "content drifted from the managed default — `data/` may not be ignored.",
         )
-    return CheckResult("`.agex/.gitignore`", "ok", "matches managed content")
+    return CheckResult(_NAME_GITIGNORE, "ok", "matches managed content")
 
 
 def _check_data_dir() -> CheckResult:
     if not agex_dir().exists():
-        return CheckResult("`.agex/data/`", "info", "skipped (no `.agex/`).")
+        return CheckResult(_NAME_DATA_DIR, "info", "skipped (no `.agex/`).")
     d = data_dir()
     if not d.exists():
         return CheckResult(
-            "`.agex/data/`",
+            _NAME_DATA_DIR,
             "warn",
             f"`{d}` is missing — re-run any agex command to recreate it.",
         )
     if not d.is_dir():
-        return CheckResult("`.agex/data/`", "fail", f"`{d}` is not a directory.")
+        return CheckResult(_NAME_DATA_DIR, "fail", f"`{d}` is not a directory.")
     # Read-only contract — no probe write. Just check perms.
     import os
 
     if not os.access(d, os.W_OK):
-        return CheckResult("`.agex/data/`", "fail", f"`{d}` is not writable.")
-    return CheckResult("`.agex/data/`", "ok", str(d))
+        return CheckResult(_NAME_DATA_DIR, "fail", f"`{d}` is not writable.")
+    return CheckResult(_NAME_DATA_DIR, "ok", str(d))
 
 
 # --- Internal consistency checks -------------------------------------------
@@ -203,7 +215,7 @@ def _check_skill_md_consistency() -> CheckResult:
     relpaths = _iter_skill_relpaths()
     if not relpaths:
         return CheckResult(
-            "Shipped SKILL.md frontmatter",
+            _NAME_SKILL_MD,
             "fail",
             "No SKILL.md files discovered — package data is missing.",
         )
@@ -216,12 +228,12 @@ def _check_skill_md_consistency() -> CheckResult:
                 failures.append(f"{rel}: {exc}")
     if failures:
         return CheckResult(
-            "Shipped SKILL.md frontmatter",
+            _NAME_SKILL_MD,
             "fail",
             f"{len(failures)} of {len(relpaths)} failed: {'; '.join(failures)}",
         )
     return CheckResult(
-        "Shipped SKILL.md frontmatter",
+        _NAME_SKILL_MD,
         "ok",
         f"{len(relpaths)} files parse cleanly",
     )
@@ -239,17 +251,17 @@ def _check_capability_yaml() -> CheckResult:
                 failures.append(f"{path.relative_to(root)}: {exc}")
     if failures:
         return CheckResult(
-            "Backend capability YAML",
+            _NAME_CAPABILITY_YAML,
             "fail",
             f"{len(failures)} of {count} failed: {'; '.join(failures)}",
         )
     if count == 0:
         return CheckResult(
-            "Backend capability YAML",
+            _NAME_CAPABILITY_YAML,
             "info",
             "no per-backend YAML files found (expected once `overview` ships).",
         )
-    return CheckResult("Backend capability YAML", "ok", f"{count} files parse cleanly")
+    return CheckResult(_NAME_CAPABILITY_YAML, "ok", f"{count} files parse cleanly")
 
 
 # --- Operator verification (markdown-only, no programmatic check) ----------
